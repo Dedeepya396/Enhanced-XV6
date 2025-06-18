@@ -80,20 +80,20 @@ void usertrap(void)
   // give up the CPU if this is a timer interrupt.
   else if (which_dev == 2) // Timer interrupt
   {
-    if (p && p->alarmticks && !p->handling_alarm)
+    if (p && p->alarmticks && !p->handling_alarm) // it is not going through alarm handler
     {
       p->ticks_passed++;
 
-      if (p->ticks_passed >= p->alarmticks)
+      if (p->ticks_passed >= p->alarmticks) // condition to move to alarm handler
       {
         p->ticks_passed = 0; // Reset tick counter
 
         // Backup trapframe so we can restore it later
         memmove(&p->alarm_tf, p->trapframe, sizeof(struct trapframe));
 
-        p->trapframe->epc = (uint64)p->alarmhandler;
+        p->trapframe->epc = (uint64)p->alarmhandler; // move to alarm handler
 
-        p->handling_alarm = 1;
+        p->handling_alarm = 1; // indicator to represent it is running alarm handler
       }
     }
     yield(); // Give up the CPU after handling timer interrupt
@@ -163,7 +163,7 @@ void kerneltrap()
 
   if ((which_dev = devintr()) == 0)
   {
-    
+
     printf("scause %p\n", scause);
     printf("sepc=%p stval=%p\n", r_sepc(), r_stval());
     panic("kerneltrap");

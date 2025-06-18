@@ -132,6 +132,7 @@ static uint64 (*syscalls[])(void) = {
     [SYS_mkdir] sys_mkdir,
     [SYS_close] sys_close,
     [SYS_waitx] sys_waitx,
+    // added a sys call getcount which returns the number of times a syscall was called for a process
     [SYS_getcount] sys_getcount,
     [SYS_setmask] sys_setmask,
     [SYS_sigalarm] sys_sigalarm,
@@ -149,8 +150,7 @@ void syscall(void)
     // Use num to lookup the system call function for num, call it,
     // and store its return value in p->trapframe->a0
     p->trapframe->a0 = syscalls[num]();
-    // p->syscall_count[num]++;
-    syscount[num]++;
+    syscount[num]++; // change the syscount for a syscall as it gets called
   }
   else
   {

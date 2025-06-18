@@ -13,3 +13,7 @@ Implemented two schedulers
 - MLFQ scheduling divides processes into multiple queues based on their priority levels, priority of a process can be changed based on the amount of cpu time a process is consuming.
 -   Each process in a queue is given a particular time slice, if it uses that time slice its priority goes down.
 -   Priority boost has been implemented where all processes are sent to high priority queue to avoid starvation
+
+## Changed Files
+
+`src/kernel/syscall.c`, `src/kernel/syscount_arr.h`, `src/kernel/sysproc.c`, `src/kernel/trap.c`, `src/kernel/proc.c`, `src/user/syscount.c`

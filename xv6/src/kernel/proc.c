@@ -590,25 +590,25 @@ void scheduler(void)
     intr_on();
 #ifdef MLFQ
 
-    pb_time++;
+    pb_time++; // incease priority boost time
     priority_boost();
 
-    for (int queue = 0; queue < 4; queue++)
+    for (int queue = 0; queue < 4; queue++) // for each queue iterate over all the process
     {
       for (p = proc; p < &proc[NPROC]; p++)
       {
-        acquire(&p->lock);
+        acquire(&p->lock); // lock the process
         if (p->state == SLEEPING)
         {
           p->ticks++;
         }
-        if (p->state == RUNNABLE && p->priority == queue)
+        if (p->state == RUNNABLE && p->priority == queue) // if the process's queue is the present queue -> run the process
         {
-          p->state = RUNNING;
-          c->proc = p;
+          p->state = RUNNING; // change the state
+          c->proc = p;        // give cpu for process
 
           p->ticks = 0;
-          swtch(&c->context, &p->context);
+          swtch(&c->context, &p->context); // perform context switch
           p->ticks++;
           if (p->state == ZOMBIE)
           {
@@ -616,8 +616,8 @@ void scheduler(void)
             release(&p->lock);
             continue;
           }
-          p->total_ticks += p->ticks;
-          if (p->total_ticks >= get_time_slice(queue))
+          p->total_ticks += p->ticks;                  // find the total time taken by the process
+          if (p->total_ticks >= get_time_slice(queue)) // if it is greater than allocated time -> reduce priority
           {
             if (queue < 3)
             {
@@ -628,19 +628,19 @@ void scheduler(void)
           {
             p->priority = queue;
           }
-          p->ticks = 0;
-          c->proc = 0;
+          p->ticks = 0; // reset the number of ticks
+          c->proc = 0;  // reset the process to cpu
         }
-        release(&p->lock);
+        release(&p->lock); // release the lock
       }
     }
 #endif
 #ifdef LBS
     total_tickets = 0;
-    for (p = proc; p < &proc[NPROC]; p++)
+    for (p = proc; p < &proc[NPROC]; p++) // iterate over all the processes
     {
       acquire(&p->lock);
-      if (p->state == RUNNABLE)
+      if (p->state == RUNNABLE) // find the tickets of all runnable processes
       {
         total_tickets += p->ticket;
       }
@@ -648,7 +648,7 @@ void scheduler(void)
     }
     if (total_tickets > 0)
     {
-      int winning_ticket = random() % total_tickets;
+      int winning_ticket = random() % total_tickets; // find the winning ticket
       // printf("%d\n",winning_ticket);
       int current_ticket = 0;
       struct proc *sched_proc = 0;
@@ -658,9 +658,9 @@ void scheduler(void)
         if (p->state == RUNNABLE)
         {
           current_ticket += p->ticket;
-          if (current_ticket > winning_ticket)
+          if (current_ticket > winning_ticket) // find the process which owns the winning ticket
           {
-            sched_proc = p;
+            sched_proc = p; // has the process that has winning ticket
             release(&p->lock);
             break;
           }
@@ -670,26 +670,26 @@ void scheduler(void)
       for (p = proc; p < &proc[NPROC]; p++)
       {
         acquire(&p->lock);
-        if (sched_proc == 0)
+        if (sched_proc == 0) // if schedule process is null schedule the first process
         {
           sched_proc = p;
         }
+        // if there are multiple process with same tickets choose the one which arrived first
         else if (p->ticket == sched_proc->ticket && p->arrival_time < sched_proc->arrival_time)
         {
           sched_proc = p;
         }
         release(&p->lock);
       }
-      if (sched_proc)
+      if (sched_proc) // if we have a scheduled process (we chose a process)
       {
-        acquire(&sched_proc->lock);
+        acquire(&sched_proc->lock); // lock it
         if (sched_proc->state == RUNNABLE)
         {
-
-          sched_proc->state = RUNNING;
-          c->proc = sched_proc;
-          swtch(&c->context, &sched_proc->context);
-          c->proc = 0;
+          sched_proc->state = RUNNING;              // changing the state
+          c->proc = sched_proc;                     // give cpu to the process
+          swtch(&c->context, &sched_proc->context); // perform context switch
+          c->proc = 0;                              // after the process free the cpu
         }
         release(&sched_proc->lock);
       }
@@ -715,77 +715,6 @@ void scheduler(void)
     }
   }
 }
-
-// void scheduler(void)
-// {
-//   struct proc *p;
-//   struct cpu *c = mycpu();
-//   c->proc = 0;
-//   int total_tickets = 0;
-//   printf("LBS\n");
-//   for (;;)
-//   {
-//     intr_on();
-//     total_tickets = 0;
-//     for (p = proc; p < &proc[NPROC]; p++)
-//     {
-//       acquire(&p->lock);
-//       if (p->state == RUNNABLE)
-//       {
-//         total_tickets += p->ticket;
-//       }
-//       release(&p->lock);
-//     }
-//     if (total_tickets > 0)
-//     {
-//       int winning_ticket = random() % total_tickets;
-//       // printf("%d\n",winning_ticket);
-//       int current_ticket = 0;
-//       struct proc *sched_proc = 0;
-//       for (p = proc; p < &proc[NPROC]; p++)
-//       {
-//         acquire(&p->lock);
-//         if (p->state == RUNNABLE)
-//         {
-//           current_ticket += p->ticket;
-//           if (current_ticket > winning_ticket)
-//           {
-//             sched_proc = p;
-//             release(&p->lock);
-//             break;
-//           }
-//         }
-//         release(&p->lock);
-//       }
-//       for (p = proc; p < &proc[NPROC]; p++)
-//       {
-//         acquire(&p->lock);
-//         if (sched_proc == 0)
-//         {
-//           sched_proc = p;
-//         }
-//         else if (p->ticket == sched_proc->ticket && p->arrival_time < sched_proc->arrival_time)
-//         {
-//           sched_proc = p;
-//         }
-//         release(&p->lock);
-//       }
-//       if (sched_proc)
-//       {
-//         acquire(&sched_proc->lock);
-//         if (sched_proc->state == RUNNABLE)
-//         {
-
-//           sched_proc->state = RUNNING;
-//           c->proc = sched_proc;
-//           swtch(&c->context, &sched_proc->context);
-//           c->proc = 0;
-//         }
-//         release(&sched_proc->lock);
-//       }
-//     }
-//   }
-// }
 
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores
